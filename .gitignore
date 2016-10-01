@@ -11,4 +11,6 @@ Icon
 Thumbs.db
 .DS_Store
 
-.historydynamodb-local/
+.history
+dynamodb-local/
+
