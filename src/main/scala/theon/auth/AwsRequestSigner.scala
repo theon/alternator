@@ -1,17 +1,22 @@
+package theon.auth
+
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+import akka.NotUsed
 import akka.http.scaladsl.model.HttpEntity.Strict
-import akka.http.scaladsl.model.headers.{Authorization, Date, GenericHttpCredentials, RawHeader}
+import akka.http.scaladsl.model.headers.{Authorization, Date, GenericHttpCredentials}
 import akka.http.scaladsl.model.{DateTime, HttpCharsets, HttpRequest}
+import akka.stream.scaladsl.Flow
 
 trait AwsRequestSigner {
-  def sign(request: HttpRequest): HttpRequest
+  def sign: Flow[HttpRequest, HttpRequest, NotUsed]
 }
 
 class SignatureV4Signer(accessKeyId: String, secretAccessKey: String) extends AwsRequestSigner {
-  def sign(r: HttpRequest): HttpRequest = {
+  def sign = Flow.fromFunction { r =>
+
     val now = DateTime(currentTimeMillis)
     val auth = authHeader(r, now)
 
@@ -22,12 +27,6 @@ class SignatureV4Signer(accessKeyId: String, secretAccessKey: String) extends Aw
 
     r.copy(headers = addHeaders ++ r.headers)
   }
-
-  val paramsToSign = Set(
-    "acl", "lifecycle", "location", "logging", "notification", "partNumber", "policy", "requestPayment",
-    "torrent", "uploadId", "uploads", "versionId", "versioning", "versions", "website", "response-content-type",
-    "response-content-language", "response-expires", "response-cache-control", "response-content-disposition",
-    "response-content-encoding", "delete")
 
   private def authHeader(r: HttpRequest, date: DateTime): Authorization = {
     val content = r.entity match {
