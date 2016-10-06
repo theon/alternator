@@ -7,7 +7,7 @@ import spray.json._
 
 class SprayJsonSupportTest extends FlatSpec with Matchers {
 
-  import DynamoDbSprayProtocol._
+  import theon.json.spray.SprayJsonImplementation._
 
   "A Number Attribute Value" should "render to JSON" in {
     NumberAttributeValue(123.45).toJson.compactPrint should equal("""{"N":"123.45"}""")

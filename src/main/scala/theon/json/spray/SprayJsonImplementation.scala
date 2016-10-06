@@ -1,15 +1,16 @@
-package theon.json
+package theon.json.spray
 
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshalling._
+import akka.http.scaladsl.model.MediaType
+import akka.http.scaladsl.unmarshalling.{Unmarshaller, _}
 import akka.util.ByteString
-import spray.json.DefaultJsonProtocol
 import spray.json._
-import theon.actions._
+import theon.json.JsonImplementation
+import theon.json.spray.SprayJsonHacks.{MissingCollectionsEmpty, NullEmptyCollections}
 import theon.model._
 
-import scala.collection.Iterable
-import scala.collection.immutable.Seq
-
-trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollections {
+trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollections with MissingCollectionsEmpty with JsonImplementation {
 
   implicit object AttributeTypeFormat extends JsonFormat[AttributeType] {
     def write(x: AttributeType) = JsString(x.awsName)
@@ -40,42 +41,42 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
 
   implicit object AttributeValueFormat extends JsonFormat[AttributeValue] {
     def write(x: AttributeValue) = x match {
-      case x: NumberAttributeValue => NumberFormat.write(x)
-      case x: StringAttributeValue => StringFormat.write(x)
-      case x: BinaryAttributeValue => BinaryFormat.write(x)
-      case x: BooleanAttributeValue => BooleanFormat.write(x)
-      case x: StringSetAttributeValue => StringSetFormat.write(x)
-      case x: BinarySetAttributeValue => BinarySetFormat.write(x)
-      case x: NumberSetAttributeValue => NumberSetFormat.write(x)
-      case x: ListAttributeValue => ListFormat.write(x)
-      case x: MapAttributeValue => MapFormat.write(x)
-      case x: NullAttributeValue.type => NullFormat.write(x)
+      case x: NumberAttributeValue => NumberAttributeValueFormat.write(x)
+      case x: StringAttributeValue => StringAttributeValueFormat.write(x)
+      case x: BinaryAttributeValue => BinaryAttributeValueFormat.write(x)
+      case x: BooleanAttributeValue => BooleanAttributeValueFormat.write(x)
+      case x: StringSetAttributeValue => StringSetAttributeValueFormat.write(x)
+      case x: BinarySetAttributeValue => BinarySetAttributeValueFormat.write(x)
+      case x: NumberSetAttributeValue => NumberSetAttributeValueFormat.write(x)
+      case x: ListAttributeValue => ListAttributeValueFormat.write(x)
+      case x: MapAttributeValue => MapAttributeValueFormat.write(x)
+      case x: NullAttributeValue.type => NullAttributeValueFormat.write(x)
     }
 
     def read(value: JsValue): AttributeValue = {
       val fields = value.asJsObject.fields
 
       if(fields.get("NULL").contains(JsTrue)) {
-        NullFormat.read(value)
+        NullAttributeValueFormat.read(value)
       }
 
       // TODO: Tidier way to do this?
       fields.keys.filterNot(_ == "NULL").headOption match {
-        case Some("N") => NumberFormat.read(value)
-        case Some("S") => StringFormat.read(value)
-        case Some("B") => BinaryFormat.read(value)
-        case Some("BOOL") => BooleanFormat.read(value)
-        case Some("SS") => StringSetFormat.read(value)
-        case Some("BS") => BinarySetFormat.read(value)
-        case Some("NS") => NumberSetFormat.read(value)
-        case Some("L") => ListFormat.read(value)
-        case Some("M") => MapFormat.read(value)
+        case Some("N") => NumberAttributeValueFormat.read(value)
+        case Some("S") => StringAttributeValueFormat.read(value)
+        case Some("B") => BinaryAttributeValueFormat.read(value)
+        case Some("BOOL") => BooleanAttributeValueFormat.read(value)
+        case Some("SS") => StringSetAttributeValueFormat.read(value)
+        case Some("BS") => BinarySetAttributeValueFormat.read(value)
+        case Some("NS") => NumberSetAttributeValueFormat.read(value)
+        case Some("L") => ListAttributeValueFormat.read(value)
+        case Some("M") => MapAttributeValueFormat.read(value)
         case x => deserializationError(x + " is an unknown AWS type field name")
       }
     }
   }
 
-  implicit object NumberFormat extends JsonFormat[NumberAttributeValue] {
+  implicit object NumberAttributeValueFormat extends JsonFormat[NumberAttributeValue] {
     def write(x: NumberAttributeValue) = JsObject("N" -> JsString(x.value.toString))
     def read(value: JsValue) = value.asJsObject.fields.get("N") match {
       case Some(JsString(x)) => NumberAttributeValue(BigDecimal(x))
@@ -83,7 +84,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object StringFormat extends JsonFormat[StringAttributeValue] {
+  implicit object StringAttributeValueFormat extends JsonFormat[StringAttributeValue] {
     def write(x: StringAttributeValue) = JsObject("S" -> JsString(x.value))
     def read(value: JsValue) = value.asJsObject.fields.get("S") match {
       case Some(JsString(x)) => StringAttributeValue(x)
@@ -99,7 +100,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     ByteString(bytes)
   }
 
-  implicit object BinaryFormat extends JsonFormat[BinaryAttributeValue] {
+  implicit object BinaryAttributeValueFormat extends JsonFormat[BinaryAttributeValue] {
     def write(x: BinaryAttributeValue) = JsObject("B" -> JsString(base64Encode(x.value)))
     def read(value: JsValue) = value.asJsObject.fields.get("B") match {
       case Some(JsString(x)) => BinaryAttributeValue(base64Decode(x))
@@ -107,7 +108,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object BooleanFormat extends JsonFormat[BooleanAttributeValue] {
+  implicit object BooleanAttributeValueFormat extends JsonFormat[BooleanAttributeValue] {
     def write(x: BooleanAttributeValue) = JsObject("BOOL" -> JsBoolean(x.value))
     def read(value: JsValue) = value.asJsObject.fields.get("BOOL") match {
       case Some(JsBoolean(x)) => BooleanAttributeValue(x)
@@ -115,7 +116,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object StringSetFormat extends JsonFormat[StringSetAttributeValue] {
+  implicit object StringSetAttributeValueFormat extends JsonFormat[StringSetAttributeValue] {
     def write(x: StringSetAttributeValue) = JsObject("SS" -> JsArray(x.value.toVector.map(JsString.apply)))
     def read(value: JsValue) = value.asJsObject.fields.get("SS") match {
       case Some(JsArray(elems)) => StringSetAttributeValue(elems.collect { case JsString(s) => s }.toSet)
@@ -123,7 +124,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object BinarySetFormat extends JsonFormat[BinarySetAttributeValue] {
+  implicit object BinarySetAttributeValueFormat extends JsonFormat[BinarySetAttributeValue] {
     def write(x: BinarySetAttributeValue) = {
       val base64Strings = x.value.toVector.map(byteStr => JsString(base64Encode(byteStr)))
       JsObject("BS" -> JsArray(base64Strings))
@@ -134,7 +135,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object NumberSetFormat extends JsonFormat[NumberSetAttributeValue] {
+  implicit object NumberSetAttributeValueFormat extends JsonFormat[NumberSetAttributeValue] {
     def write(x: NumberSetAttributeValue) = JsObject("NS" -> JsArray(x.value.toVector.map(num => JsString(num.toString))))
     def read(value: JsValue) = value.asJsObject.fields.get("NS") match {
       case Some(JsArray(elems)) => NumberSetAttributeValue(elems.collect { case JsString(s) => BigDecimal(s) }.toSet)
@@ -142,7 +143,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object ListFormat extends JsonFormat[ListAttributeValue] {
+  implicit object ListAttributeValueFormat extends JsonFormat[ListAttributeValue] {
     def write(x: ListAttributeValue) = JsObject("L" -> x.value.toJson)
     def read(value: JsValue) = value.asJsObject.fields.get("L") match {
       case Some(JsArray(elems)) => ListAttributeValue(elems.map(_.convertTo[AttributeValue]))
@@ -150,7 +151,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object MapFormat extends JsonFormat[MapAttributeValue] {
+  implicit object MapAttributeValueFormat extends JsonFormat[MapAttributeValue] {
     def write(x: MapAttributeValue) = JsObject("M" -> JsObject(x.value.mapValues(_.toJson)))
     def read(value: JsValue) = value.asJsObject.fields.get("M") match {
       case Some(JsObject(fields)) => MapAttributeValue(fields.mapValues(_.convertTo[AttributeValue]))
@@ -158,7 +159,7 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
     }
   }
 
-  implicit object NullFormat extends JsonFormat[NullAttributeValue.type ] {
+  implicit object NullAttributeValueFormat extends JsonFormat[NullAttributeValue.type ] {
     def write(nullValue: NullAttributeValue.type): JsValue = JsNull
     def read(value: JsValue): NullAttributeValue.type = NullAttributeValue
   }
@@ -190,7 +191,33 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
 
   implicit val provisionedThroughputFormat = jsonFormat(ProvisionedThroughput.apply, "ReadCapacityUnits", "WriteCapacityUnits")
 
+  implicit val provisionedThroughputDescriptionFormat = jsonFormat(ProvisionedThroughputDescription.apply, "LastDecreaseDateTime", "LastIncreaseDateTime", "NumberOfDecreasesToday", "ReadCapacityUnits", "WriteCapacityUnits")
+
   implicit val globalSecondaryIndexFormat = jsonFormat(GlobalSecondaryIndex.apply, "IndexName", "KeySchema", "Projection", "ProvisionedThroughput")
+
+  implicit object IndexStatusFormat extends JsonFormat[IndexStatus] {
+    def write(x: IndexStatus) = JsString(x.toString)
+    def read(value: JsValue): IndexStatus = value match {
+      case JsString("ACTIVE") => IndexStatus.ACTIVE
+      case JsString("CREATING") => IndexStatus.CREATING
+      case JsString("UPDATING") => IndexStatus.UPDATING
+      case JsString("DELETING") => IndexStatus.DELETING
+      case x => deserializationError(x + " is an unknown AWS Index Status")
+    }
+  }
+
+  implicit object TableStatusFormat extends JsonFormat[TableStatus] {
+    def write(x: TableStatus) = JsString(x.toString)
+    def read(value: JsValue): TableStatus = value match {
+      case JsString("ACTIVE") => TableStatus.ACTIVE
+      case JsString("CREATING") => TableStatus.CREATING
+      case JsString("UPDATING") => TableStatus.UPDATING
+      case JsString("DELETING") => TableStatus.DELETING
+      case x => deserializationError(x + " is an unknown AWS Table Status")
+    }
+  }
+
+  implicit val globalSecondaryIndexDescriptionFormat = jsonFormat(GlobalSecondaryIndexDescription.apply, "Backfilling", "IndexArn", "IndexName", "IndexSizeBytes", "IndexStatus", "ItemCount", "KeySchema")
 
   implicit object StreamViewTypeFormat extends JsonFormat[StreamViewType] {
     def write(x: StreamViewType) = JsString(x.toString)
@@ -205,22 +232,28 @@ trait DynamoDbSprayProtocol extends DefaultJsonProtocol with NullEmptyCollection
 
   implicit val localSecondaryIndexFormat = jsonFormat(LocalSecondaryIndex.apply, "IndexName", "KeySchema", "Projection")
 
+  implicit val localSecondaryIndexDescriptionFormat = jsonFormat(LocalSecondaryIndexDescription.apply, "IndexArn", "IndexName", "IndexSizeBytes", "ItemCount", "KeySchema", "Projection")
+
   implicit val streamSpecificationFormat = jsonFormat(StreamSpecification.apply, "StreamEnabled", "StreamViewType")
+
+  implicit val tableDescriptionFormat = jsonFormat(TableDescription.apply, "AttributeDefinitions", "CreationDateTime", "GlobalSecondaryIndexes", "ItemCount", "KeySchema", "LatestStreamArn", "LatestStreamLabel", "LocalSecondaryIndexes", "ProvisionedThroughput", "StreamSpecification", "TableArn", "TableName", "TableSizeBytes", "TableStatus")
 
   // Actions
 
+  val `application/x-aws-json-1.0` = MediaType.applicationWithOpenCharset("x-amz-json-1.0")
+
+  def awsJsonUnmarshaller[T](implicit reader: RootJsonReader[T]) =
+    Unmarshaller
+      .stringUnmarshaller
+      .forContentTypes(`application/x-aws-json-1.0`)
+      .map(input => reader.read(input.parseJson))
+
   implicit val createTableFormat = jsonFormat(CreateTable.apply, "AttributeDefinitions", "GlobalSecondaryIndexes", "KeySchema", "LocalSecondaryIndexes", "ProvisionedThroughput", "StreamSpecification", "TableName")
+  implicit val createTableMarshaller: ToEntityMarshaller[CreateTable] = sprayJsonMarshaller[CreateTable]
 
+  implicit val createTableResponseFormat = jsonFormat(CreateTableResponse, "TableDescription")
+  implicit val createTableResponseUnMarshaller: FromEntityUnmarshaller[CreateTableResponse] = awsJsonUnmarshaller[CreateTableResponse]
 }
 
-object DynamoDbSprayProtocol extends DynamoDbSprayProtocol
+object SprayJsonImplementation extends SprayJsonImplementation
 
-trait NullEmptyCollections extends CollectionFormats {
-  override def viaSeq[I <: Iterable[T], T :JsonFormat](f: Seq[T] => I): RootJsonFormat[I] = {
-    def superFormat = super.viaSeq(f)
-    new RootJsonFormat[I] {
-      def write(iterable: I) = if (iterable.isEmpty) JsNull else superFormat.write(iterable)
-      def read(value: JsValue) = superFormat.read(value)
-    }
-  }
-}

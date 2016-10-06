@@ -64,6 +64,24 @@ object model {
 
   case class GlobalSecondaryIndex(indexName: String, keySchema: Seq[KeySchemaElement], projection: Projection, provisionedThroughput: ProvisionedThroughput)
 
+  case class GlobalSecondaryIndexDescription(backFilling: Boolean, indexArn: String, indexName: String, indexSizeBytes: Long, indexStatus: IndexStatus, itemCount: Long, keySchema: Seq[KeySchemaElement])
+
+  sealed trait IndexStatus
+  object IndexStatus {
+    case object CREATING extends IndexStatus
+    case object UPDATING extends IndexStatus
+    case object DELETING extends IndexStatus
+    case object ACTIVE extends IndexStatus
+  }
+
+  sealed trait TableStatus
+  object TableStatus {
+    case object CREATING extends TableStatus
+    case object UPDATING extends TableStatus
+    case object DELETING extends TableStatus
+    case object ACTIVE extends TableStatus
+  }
+
   sealed trait KeyType
   object KeyType {
     case object HASH extends KeyType
@@ -74,6 +92,8 @@ object model {
 
   case class LocalSecondaryIndex(indexName: String, keySchema: Seq[KeySchemaElement], projection: Projection)
 
+  case class LocalSecondaryIndexDescription(indexArn: String, indexName: String, indexSizeBytes: Long, itemCount: Long, keySchema: Seq[KeySchemaElement], projection: Projection)
+
   sealed trait ProjectionType
   object ProjectionType {
     case object KEYS_ONLY extends ProjectionType
@@ -83,7 +103,10 @@ object model {
 
   case class Projection(nonKeyAttributes: Seq[String], projectionType: ProjectionType)
 
-  case class ProvisionedThroughput(readCapacityUnits: Int, writeCapacityUnits: Int)
+  case class ProvisionedThroughput(readCapacityUnits: Long, writeCapacityUnits: Long)
+
+  // TODO: DateTime?
+  case class ProvisionedThroughputDescription(lastDecreaseDateTime: BigDecimal, lastIncreaseDateTime: BigDecimal, numberOfDecreasesToday: Long, readCapacityUnits: Long, writeCapacityUnits: Long)
 
   sealed trait StreamViewType
   object StreamViewType {
@@ -95,4 +118,30 @@ object model {
 
 
   case class StreamSpecification(streamEnabled: Boolean, streamViewType: StreamViewType)
+
+  // Actions
+
+  case class CreateTable(attributeDefinitions: Seq[AttributeDefinition],
+                         globalSecondaryIndexes: Seq[GlobalSecondaryIndex],
+                         keySchema: Seq[KeySchemaElement],
+                         localSecondaryIndexes: Seq[LocalSecondaryIndex],
+                         provisionedThroughput: ProvisionedThroughput,
+                         streamSpecification: Option[StreamSpecification],
+                         tableName: String)
+
+  case class CreateTableResponse(tableDescription: TableDescription)
+  case class TableDescription(attributeDefinitions: Seq[AttributeDefinition],
+                              creationDateTime: BigDecimal, // TODO: DateTime?
+                              globalSecondaryIndexes: Seq[GlobalSecondaryIndex],
+                              itemCount: Long,
+                              keySchema: Seq[KeySchemaElement],
+                              latestStreamArn: Option[String],
+                              latestStreamLabel: Option[String],
+                              localSecondaryIndexes: Seq[LocalSecondaryIndexDescription],
+                              provisionedThroughput: ProvisionedThroughputDescription,
+                              streamSpecification: Option[StreamSpecification],
+                              tableArn: String,
+                              tableName: String,
+                              tableSizeBytes: Long,
+                              tableStatus: TableStatus)
 }
