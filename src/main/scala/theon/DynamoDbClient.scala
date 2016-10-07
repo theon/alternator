@@ -2,6 +2,7 @@ package theon
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
@@ -41,19 +42,20 @@ class DynamoDbClient(host: String,
                     (implicit val system: ActorSystem, val materializer: ActorMaterializer) {
   this: ReturnTypeConverter with JsonImplementation =>
 
+  val logger = Logging.getLogger(system, this)
+
   import system.dispatcher
 
   val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
     Http().outgoingConnection(host, port)
 
   val requestLogging: Flow[HttpRequest, HttpRequest, NotUsed] = Flow.fromFunction { r =>
-    println(r) // TODO: Use Akka logger
+    logger.debug("DynamoDB Request: {}", r)
     r
   }
 
   val responseLogging: Flow[HttpResponse, HttpResponse, NotUsed] = Flow.fromFunction { r =>
-    println(r.status) // TODO: Use Akka logger
-    r.entity.dataBytes.runForeach(bs => println(bs.utf8String))
+    logger.debug("DynamoDB Response: {}", r)
     r
   }
 
