@@ -1,6 +1,8 @@
 package theon
 
+import akka.http.scaladsl.model.StatusCode
 import akka.util.ByteString
+
 import scala.collection.immutable.Seq
 
 /**
@@ -118,6 +120,10 @@ object model {
 
 
   case class StreamSpecification(streamEnabled: Boolean, streamViewType: StreamViewType)
+
+  case class DynamoDbFailure(failureType: String, message: String)
+
+  case class DynamoDbException(httpStatus: StatusCode, failure: DynamoDbFailure) extends Exception(failure.message)
 
   // Actions
 

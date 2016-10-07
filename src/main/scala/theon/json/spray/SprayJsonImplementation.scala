@@ -238,6 +238,9 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollecti
 
   implicit val tableDescriptionFormat = jsonFormat(TableDescription.apply, "AttributeDefinitions", "CreationDateTime", "GlobalSecondaryIndexes", "ItemCount", "KeySchema", "LatestStreamArn", "LatestStreamLabel", "LocalSecondaryIndexes", "ProvisionedThroughput", "StreamSpecification", "TableArn", "TableName", "TableSizeBytes", "TableStatus")
 
+  implicit val dynamoDbFailureFormat = jsonFormat(DynamoDbFailure.apply, "__type", "message")
+  implicit def dynamoDbFailureUnmarshaller: FromEntityUnmarshaller[DynamoDbFailure] = awsJsonUnmarshaller[DynamoDbFailure]
+
   // Actions
 
   def awsJsonUnmarshaller[T](implicit reader: RootJsonReader[T]) =
@@ -250,7 +253,7 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollecti
   implicit val createTableMarshaller: ToEntityMarshaller[CreateTable] = sprayJsonMarshaller[CreateTable]
 
   implicit val createTableResponseFormat = jsonFormat(CreateTableResponse, "TableDescription")
-  implicit val createTableResponseUnMarshaller: FromEntityUnmarshaller[CreateTableResponse] = awsJsonUnmarshaller[CreateTableResponse]
+  implicit val createTableResponseUnmarshaller: FromEntityUnmarshaller[CreateTableResponse] = awsJsonUnmarshaller[CreateTableResponse]
 }
 
 object SprayJsonImplementation extends SprayJsonImplementation

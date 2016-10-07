@@ -21,19 +21,20 @@ object Main {
     val signer = new SignatureV4Signer("test2", "test")
     val client = DynamoDbClient("localhost", 8000, signer)
 
-    //val xAmzJson10 = ContentType(MediaType.customWithFixedCharset("application", "x-amz-json-1.0", HttpCharsets.`UTF-8`))
+    val tableName = UUID.randomUUID.toString
 
-    val responseFuture = client.createTable(CreateTable(AttributeDefinition("id", STRING) :: Nil, Seq.empty, KeySchemaElement("id", HASH) :: Nil, Seq.empty, ProvisionedThroughput(100, 10), None, UUID.randomUUID.toString))
- 
-    responseFuture.andThen {
-      case Success(res) =>
-        println(res)
-        //res.entity.dataBytes.runForeach(bs => println(bs.utf8String))
-      case Failure(e) =>
-        e.printStackTrace()
-        println("request failed")
-    }.andThen {
-      case _ => system.terminate()
+    (1 to 2) foreach { i =>
+      val responseFuture = client.createTable(CreateTable(AttributeDefinition("id", STRING) :: Nil, Seq.empty, KeySchemaElement("id", HASH) :: Nil, Seq.empty, ProvisionedThroughput(100, 10), None, tableName))
+
+      responseFuture.andThen {
+        case Success(res) =>
+          println(res)
+        case Failure(e) =>
+          e.printStackTrace()
+          println("request failed")
+      }.andThen {
+        case _ => system.terminate()
+      }
     }
   }
 }

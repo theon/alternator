@@ -11,7 +11,7 @@ import akka.stream.scaladsl.{Flow, Source}
 import theon.auth.AwsRequestSigner
 import theon.json.JsonImplementation
 import theon.json.spray.SprayJsonImplementation
-import theon.model.{CreateTable, CreateTableResponse}
+import theon.model.{CreateTable, CreateTableResponse, DynamoDbException}
 
 import scala.concurrent.Future
 
@@ -62,7 +62,12 @@ class DynamoDbClient(host: String,
       .via(requestLogging)
       .via(connectionFlow)
       .via(responseLogging)
-      .mapAsync(1)(res => unmarshaller(res.entity))
+      .mapAsync(1) {
+        case res if res.status.isFailure =>
+          dynamoDbFailureUnmarshaller(res.entity).map(failure => throw DynamoDbException(res.status, failure))
+        case res =>
+          unmarshaller(res.entity)
+      }
 
     convert(source)
   }
