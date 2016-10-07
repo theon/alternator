@@ -7,8 +7,6 @@ import theon.auth.SignatureV4Signer
 import theon.model.AttributeType._
 import theon.model.KeyType._
 import theon.model._
-
-import scala.util.{Failure, Success}
  
 object Main {
   def main(args: Array[String]): Unit = {
@@ -16,33 +14,25 @@ object Main {
     implicit val executionContext = system.dispatcher
 
     val signer = new SignatureV4Signer("test2", "test")
-    val client = DynamoDbClient("localhost", 8000, signer)
+    val client = DynamoDbClient.blocking("localhost", 8000, signer)
 
-    val tableName = UUID.randomUUID.toString
+    try {
 
-    val responseFuture = client.createTable(tableName, AttributeDefinition("id", STRING) :: Nil, KeySchemaElement("id", HASH) :: Nil, ProvisionedThroughput(100, 10))
+      val tableName = UUID.randomUUID.toString
 
-    responseFuture.andThen {
-      case Success(res) =>
-        println(res)
-      case Failure(e) =>
-        e.printStackTrace()
-        println("request failed")
-    }.andThen {
-      case _ =>
+      val createResponse = client.createTable(tableName, AttributeDefinition("id", STRING) :: Nil, KeySchemaElement("id", HASH) :: Nil, ProvisionedThroughput(100, 10))
+      println(createResponse)
 
-        val putResponse = client.putItem(tableName, Map("id" -> StringAttributeValue("blah")))
+      val putResponse = client.putItem(tableName, Map("id" -> StringAttributeValue("blah")))
+      println(putResponse)
 
-        putResponse.andThen {
-          case Success(res) =>
-            println(res)
-          case Failure(e) =>
-            e.printStackTrace()
-            println("put request failed")
-        }.andThen {
-          case _ =>
-            system.terminate()
-        }
+      val deleteResponse = client.deleteItem(tableName, Map("id" -> StringAttributeValue("blah")))
+      println(deleteResponse)
+
+    } catch {
+      case e: Exception => e.printStackTrace
     }
+
+    system.terminate()
   }
 }

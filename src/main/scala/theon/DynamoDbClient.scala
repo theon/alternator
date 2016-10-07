@@ -26,6 +26,13 @@ object DynamoDbClient {
            (implicit system: ActorSystem) = {
     new DynamoDbClient(host, port, auth)(system, ActorMaterializer()) with SprayJsonImplementation with FutureReturnType
   }
+
+  def blocking(host: String,
+               port: Int,
+               auth: AwsRequestSigner)
+              (implicit system: ActorSystem) = {
+    new DynamoDbClient(host, port, auth)(system, ActorMaterializer()) with SprayJsonImplementation with BlockingReturnType
+  }
 }
 
 class DynamoDbClient(host: String,
@@ -75,9 +82,24 @@ class DynamoDbClient(host: String,
               expressionAttributeValues: AttributeValueMap = Map.empty): ReturnType[PutItemResponse] = {
     val request = PutItem(conditionalExpression, expressionAttributeNames, expressionAttributeValues, item, returnConsumedCapacity, returnItemCollectionMetrics, returnValues, tableName)
     val httpRequest = Marshal(request).to[RequestEntity] map { entity =>
-      HttpRequest(method = POST, entity = entity, headers = `X-Amz-Target`("DynamoDB_20120810.PutItem ") :: Nil)
+      HttpRequest(method = POST, entity = entity, headers = `X-Amz-Target`("DynamoDB_20120810.PutItem") :: Nil)
     }
     singleRequest[PutItemResponse](httpRequest)
+  }
+
+  def deleteItem(tableName: String,
+                 key: AttributeValueMap,
+                 returnConsumedCapacity: ReturnConsumedCapacity = ReturnConsumedCapacity.NONE,
+                 returnItemCollectionMetrics: ReturnItemCollectionMetrics = ReturnItemCollectionMetrics.NONE,
+                 returnValues: ReturnValues = ReturnValues.NONE,
+                 conditionalExpression: Option[String] = None,
+                 expressionAttributeNames: Map[String,String] = Map.empty,
+                 expressionAttributeValues: AttributeValueMap = Map.empty): ReturnType[DeleteItemResponse] = {
+    val request = DeleteItem(key, tableName, conditionalExpression, expressionAttributeNames, expressionAttributeValues, returnConsumedCapacity, returnItemCollectionMetrics, returnValues)
+    val httpRequest = Marshal(request).to[RequestEntity] map { entity =>
+      HttpRequest(method = POST, entity = entity, headers = `X-Amz-Target`("DynamoDB_20120810.DeleteItem") :: Nil)
+    }
+    singleRequest[DeleteItemResponse](httpRequest)
   }
 
   def singleRequest[O](request: Future[HttpRequest])

@@ -269,7 +269,10 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with DoNotRenderEmptyC
   implicit object ReturnValuesFormat extends JsonFormat[ReturnValues] {
     def write(x: ReturnValues) = JsString(x.toString)
     def read(value: JsValue): ReturnValues = value match {
+      case JsString("ALL_NEW") => ReturnValues.ALL_NEW
       case JsString("ALL_OLD") => ReturnValues.ALL_OLD
+      case JsString("UPDATED_NEW") => ReturnValues.UPDATED_NEW
+      case JsString("UPDATED_OLD") => ReturnValues.UPDATED_OLD
       case JsString("NONE") => ReturnValues.NONE
       case x => deserializationError(x + " is an unknown AWS ReturnValues")
     }
@@ -294,6 +297,12 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with DoNotRenderEmptyC
 
   implicit def putItemResponseFormat = jsonFormat(PutItemResponse.apply, "Attributes", "ConsumedCapacity", "ItemCollectionMetrics")
   implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse] = awsJsonUnmarshaller[PutItemResponse]
+
+  implicit def deleteItemFormat = jsonFormat(DeleteItem.apply, "Key", "TableName", "ConditionalExpression", "ExpressionAttributeNames", "ExpressionAttributeValues", "ReturnConsumedCapacity", "ReturnItemCollectionMetrics", "ReturnValues")
+  implicit def deleteItemMarshaller: ToEntityMarshaller[DeleteItem] = sprayJsonMarshaller[DeleteItem]
+
+  implicit def deleteItemResponseFormat = jsonFormat(DeleteItemResponse.apply, "Attributes", "ConsumedCapacity", "ItemCollectionMetrics")
+  implicit def deleteItemResponseUnmarshaller: FromEntityUnmarshaller[DeleteItemResponse] = awsJsonUnmarshaller[DeleteItemResponse]
 }
 
 object SprayJsonImplementation extends SprayJsonImplementation

@@ -127,6 +127,33 @@ object model {
 
   case class DynamoDbException(httpStatus: StatusCode, failure: DynamoDbFailure) extends Exception(failure.message)
 
+  sealed trait ReturnConsumedCapacity
+  object ReturnConsumedCapacity {
+    case object INDEXES extends ReturnConsumedCapacity
+    case object TOTAL extends ReturnConsumedCapacity
+    case object NONE extends ReturnConsumedCapacity
+  }
+
+  case class Capacity(capacityUnits: Double)
+  case class ConsumedCapacity(capacityUnits: Double, globalSecondaryIndexes: Map[String,Capacity], localSecondaryIndexes: Map[String,Capacity], table: Option[Capacity], tableName: String)
+
+  sealed trait ReturnItemCollectionMetrics
+  object ReturnItemCollectionMetrics {
+    case object SIZE extends ReturnItemCollectionMetrics
+    case object NONE extends ReturnItemCollectionMetrics
+  }
+
+  case class ItemCollectionMetrics(itemCollectionKey: AttributeValueMap, sizeEstimateRangeGB: (Double,Double))
+
+  sealed trait ReturnValues
+  object ReturnValues {
+    case object UPDATED_NEW extends ReturnValues
+    case object UPDATED_OLD extends ReturnValues
+    case object ALL_NEW extends ReturnValues
+    case object ALL_OLD extends ReturnValues
+    case object NONE extends ReturnValues
+  }
+
   // Actions
 
   case class CreateTable(attributeDefinitions: Seq[AttributeDefinition],
@@ -153,30 +180,6 @@ object model {
                               tableSizeBytes: Long,
                               tableStatus: TableStatus)
 
-  sealed trait ReturnConsumedCapacity
-  object ReturnConsumedCapacity {
-    case object INDEXES extends ReturnConsumedCapacity
-    case object TOTAL extends ReturnConsumedCapacity
-    case object NONE extends ReturnConsumedCapacity
-  }
-
-  case class Capacity(capacityUnits: Double)
-  case class ConsumedCapacity(capacityUnits: Double, globalSecondaryIndexes: Map[String,Capacity], localSecondaryIndexes: Map[String,Capacity], table: Option[Capacity], tableName: String)
-
-  sealed trait ReturnItemCollectionMetrics
-  object ReturnItemCollectionMetrics {
-    case object SIZE extends ReturnItemCollectionMetrics
-    case object NONE extends ReturnItemCollectionMetrics
-  }
-
-  case class ItemCollectionMetrics(itemCollectionKey: AttributeValueMap, sizeEstimateRangeGB: (Double,Double))
-
-  sealed trait ReturnValues
-  object ReturnValues {
-    case object ALL_OLD extends ReturnValues
-    case object NONE extends ReturnValues
-  }
-
   case class PutItem(conditionExpression: Option[String],
                      expressionAttributeNames: Map[String,String],
                      expressionAttributeValues: AttributeValueMap,
@@ -189,4 +192,17 @@ object model {
   case class PutItemResponse(attributes: AttributeValueMap,
                              consumedCapacity: Option[ConsumedCapacity],
                              itemCollectionMetrics: Option[ItemCollectionMetrics])
+
+  case class DeleteItem(key: AttributeValueMap,
+                        tableName: String,
+                        conditionalExpression: Option[String],
+                        expressionAttributeNames: Map[String,String],
+                        expressionAttributeValues: AttributeValueMap,
+                        returnConsumedCapacity: ReturnConsumedCapacity,
+                        returnItemCollectionMetrics: ReturnItemCollectionMetrics,
+                        returnValues: ReturnValues)
+
+  case class DeleteItemResponse(attributes: AttributeValueMap,
+                                consumedCapacity: Option[ConsumedCapacity],
+                                itemCollectionMetrics: Option[ItemCollectionMetrics])
 }

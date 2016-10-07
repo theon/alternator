@@ -14,5 +14,8 @@ trait JsonImplementation {
   implicit def putItemMarshaller: ToEntityMarshaller[PutItem]
   implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse]
 
+  implicit def deleteItemMarshaller: ToEntityMarshaller[DeleteItem]
+  implicit def deleteItemResponseUnmarshaller: FromEntityUnmarshaller[DeleteItemResponse]
+
   implicit def dynamoDbFailureUnmarshaller: FromEntityUnmarshaller[DynamoDbFailure]
 }
