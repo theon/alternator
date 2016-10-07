@@ -2,7 +2,7 @@ package theon.json
 
 import akka.http.scaladsl.marshalling._
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import theon.model.{CreateTable, CreateTableResponse, DynamoDbFailure}
+import theon.model._
 
 trait JsonImplementation {
 
@@ -10,6 +10,9 @@ trait JsonImplementation {
 
   implicit def createTableMarshaller: ToEntityMarshaller[CreateTable]
   implicit def createTableResponseUnmarshaller: FromEntityUnmarshaller[CreateTableResponse]
+
+  implicit def putItemMarshaller: ToEntityMarshaller[PutItem]
+  implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse]
 
   implicit def dynamoDbFailureUnmarshaller: FromEntityUnmarshaller[DynamoDbFailure]
 }

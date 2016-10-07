@@ -7,10 +7,10 @@ import akka.util.ByteString
 import spray.json._
 import theon.`application/x-aws-json-1.0`
 import theon.json.JsonImplementation
-import theon.json.spray.SprayJsonHacks.{MissingCollectionsEmpty, NullEmptyCollections}
+import theon.json.spray.SprayJsonHacks.DoNotRenderEmptyCollections
 import theon.model._
 
-trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollections with MissingCollectionsEmpty with JsonImplementation {
+trait SprayJsonImplementation extends DefaultJsonProtocol with DoNotRenderEmptyCollections with JsonImplementation {
 
   implicit object AttributeTypeFormat extends JsonFormat[AttributeType] {
     def write(x: AttributeType) = JsString(x.awsName)
@@ -241,6 +241,40 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollecti
   implicit val dynamoDbFailureFormat = jsonFormat(DynamoDbFailure.apply, "__type", "message")
   implicit def dynamoDbFailureUnmarshaller: FromEntityUnmarshaller[DynamoDbFailure] = awsJsonUnmarshaller[DynamoDbFailure]
 
+  implicit object ReturnConsumedCapacityFormat extends JsonFormat[ReturnConsumedCapacity] {
+    def write(x: ReturnConsumedCapacity) = JsString(x.toString)
+    def read(value: JsValue): ReturnConsumedCapacity = value match {
+      case JsString("INDEXES") => ReturnConsumedCapacity.INDEXES
+      case JsString("TOTAL") => ReturnConsumedCapacity.TOTAL
+      case JsString("NONE") => ReturnConsumedCapacity.NONE
+      case x => deserializationError(x + " is an unknown AWS ReturnConsumedCapacity")
+    }
+  }
+
+  implicit val capacityFormat = jsonFormat(Capacity, "CapacityUnits")
+
+  implicit val consumedCapacityFormat = jsonFormat(ConsumedCapacity, "CapacityUnits", "GlobalSecondaryIndexes", "LocalSecondaryIndexes", "Table", "TableName")
+
+  implicit object ReturnItemCollectionMetricsFormat extends JsonFormat[ReturnItemCollectionMetrics] {
+    def write(x: ReturnItemCollectionMetrics) = JsString(x.toString)
+    def read(value: JsValue): ReturnItemCollectionMetrics = value match {
+      case JsString("SIZE") => ReturnItemCollectionMetrics.SIZE
+      case JsString("NONE") => ReturnItemCollectionMetrics.NONE
+      case x => deserializationError(x + " is an unknown AWS ReturnItemCollectionMetrics")
+    }
+  }
+
+  implicit val itemCollectionMetrics = jsonFormat(ItemCollectionMetrics.apply, "ItemCollectionKey", "SizeEstimateRangeGB")
+
+  implicit object ReturnValuesFormat extends JsonFormat[ReturnValues] {
+    def write(x: ReturnValues) = JsString(x.toString)
+    def read(value: JsValue): ReturnValues = value match {
+      case JsString("ALL_OLD") => ReturnValues.ALL_OLD
+      case JsString("NONE") => ReturnValues.NONE
+      case x => deserializationError(x + " is an unknown AWS ReturnValues")
+    }
+  }
+
   // Actions
 
   def awsJsonUnmarshaller[T](implicit reader: RootJsonReader[T]) =
@@ -254,6 +288,12 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollecti
 
   implicit val createTableResponseFormat = jsonFormat(CreateTableResponse, "TableDescription")
   implicit val createTableResponseUnmarshaller: FromEntityUnmarshaller[CreateTableResponse] = awsJsonUnmarshaller[CreateTableResponse]
+
+  implicit def putItemFormat = jsonFormat(PutItem.apply, "ConditionalExpression", "ExpressionAttributeNames", "ExpressionAttributeValues", "Item", "ReturnConsumedCapacity", "ReturnItemCollectionMetrics", "ReturnValues", "TableName")
+  implicit def putItemMarshaller: ToEntityMarshaller[PutItem] = sprayJsonMarshaller[PutItem]
+
+  implicit def putItemResponseFormat = jsonFormat(PutItemResponse.apply, "Attributes", "ConsumedCapacity", "ItemCollectionMetrics")
+  implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse] = awsJsonUnmarshaller[PutItemResponse]
 }
 
 object SprayJsonImplementation extends SprayJsonImplementation

@@ -50,6 +50,8 @@ object model {
     //def typ: AttributeType
   }
 
+  type AttributeValueMap = Map[String,AttributeValue]
+
   case class NumberAttributeValue(value: BigDecimal) extends AttributeValue //{ val typ = NUMBER }
   case class StringAttributeValue(value: String) extends AttributeValue //{ val typ = STRING }
   case class BinaryAttributeValue(value: ByteString) extends AttributeValue //{ val typ = BINARY }
@@ -150,4 +152,41 @@ object model {
                               tableName: String,
                               tableSizeBytes: Long,
                               tableStatus: TableStatus)
+
+  sealed trait ReturnConsumedCapacity
+  object ReturnConsumedCapacity {
+    case object INDEXES extends ReturnConsumedCapacity
+    case object TOTAL extends ReturnConsumedCapacity
+    case object NONE extends ReturnConsumedCapacity
+  }
+
+  case class Capacity(capacityUnits: Double)
+  case class ConsumedCapacity(capacityUnits: Double, globalSecondaryIndexes: Map[String,Capacity], localSecondaryIndexes: Map[String,Capacity], table: Option[Capacity], tableName: String)
+
+  sealed trait ReturnItemCollectionMetrics
+  object ReturnItemCollectionMetrics {
+    case object SIZE extends ReturnItemCollectionMetrics
+    case object NONE extends ReturnItemCollectionMetrics
+  }
+
+  case class ItemCollectionMetrics(itemCollectionKey: AttributeValueMap, sizeEstimateRangeGB: (Double,Double))
+
+  sealed trait ReturnValues
+  object ReturnValues {
+    case object ALL_OLD extends ReturnValues
+    case object NONE extends ReturnValues
+  }
+
+  case class PutItem(conditionExpression: Option[String],
+                     expressionAttributeNames: Map[String,String],
+                     expressionAttributeValues: AttributeValueMap,
+                     item: AttributeValueMap,
+                     returnConsumedCapacity: ReturnConsumedCapacity,
+                     returnItemCollectionMetrics: ReturnItemCollectionMetrics,
+                     returnValues: ReturnValues,
+                     tableName: String)
+
+  case class PutItemResponse(attributes: AttributeValueMap,
+                             consumedCapacity: Option[ConsumedCapacity],
+                             itemCollectionMetrics: Option[ItemCollectionMetrics])
 }
