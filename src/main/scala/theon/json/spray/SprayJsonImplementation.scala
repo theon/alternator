@@ -2,10 +2,10 @@ package theon.json.spray
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling._
-import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.unmarshalling.{Unmarshaller, _}
 import akka.util.ByteString
 import spray.json._
+import theon.`application/x-aws-json-1.0`
 import theon.json.JsonImplementation
 import theon.json.spray.SprayJsonHacks.{MissingCollectionsEmpty, NullEmptyCollections}
 import theon.model._
@@ -239,8 +239,6 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with NullEmptyCollecti
   implicit val tableDescriptionFormat = jsonFormat(TableDescription.apply, "AttributeDefinitions", "CreationDateTime", "GlobalSecondaryIndexes", "ItemCount", "KeySchema", "LatestStreamArn", "LatestStreamLabel", "LocalSecondaryIndexes", "ProvisionedThroughput", "StreamSpecification", "TableArn", "TableName", "TableSizeBytes", "TableStatus")
 
   // Actions
-
-  val `application/x-aws-json-1.0` = MediaType.applicationWithOpenCharset("x-amz-json-1.0")
 
   def awsJsonUnmarshaller[T](implicit reader: RootJsonReader[T]) =
     Unmarshaller
