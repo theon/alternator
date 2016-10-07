@@ -14,6 +14,10 @@ trait JsonImplementation {
   implicit def putItemMarshaller: ToEntityMarshaller[PutItem]
   implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse]
 
+  implicit def getItemMarshaller: ToEntityMarshaller[GetItem]
+  implicit def getItemResponseUnmarshaller: FromEntityUnmarshaller[GetItemResponse]
+
+
   implicit def deleteItemMarshaller: ToEntityMarshaller[DeleteItem]
   implicit def deleteItemResponseUnmarshaller: FromEntityUnmarshaller[DeleteItemResponse]
 

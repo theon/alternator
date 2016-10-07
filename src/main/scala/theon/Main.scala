@@ -26,6 +26,9 @@ object Main {
       val putResponse = client.putItem(tableName, Map("id" -> StringAttributeValue("blah")))
       println(putResponse)
 
+      val getResponse = client.getItem(tableName, Map("id" -> StringAttributeValue("blah")))
+      println(getResponse)
+
       val deleteResponse = client.deleteItem(tableName, Map("id" -> StringAttributeValue("blah")))
       println(deleteResponse)
 

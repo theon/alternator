@@ -193,6 +193,16 @@ object model {
                              consumedCapacity: Option[ConsumedCapacity],
                              itemCollectionMetrics: Option[ItemCollectionMetrics])
 
+  case class GetItem(key: AttributeValueMap,
+                     tableName: String,
+                     consistentRead: Boolean,
+                     expressionAttributeNames: Map[String,String],
+                     projectionExpression: Option[String],
+                     returnConsumedCapacity: ReturnConsumedCapacity)
+
+  case class GetItemResponse(consumedCapacity: Option[ConsumedCapacity],
+                             item: AttributeValueMap)
+
   case class DeleteItem(key: AttributeValueMap,
                         tableName: String,
                         conditionalExpression: Option[String],

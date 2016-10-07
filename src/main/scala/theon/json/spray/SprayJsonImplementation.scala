@@ -298,6 +298,12 @@ trait SprayJsonImplementation extends DefaultJsonProtocol with DoNotRenderEmptyC
   implicit def putItemResponseFormat = jsonFormat(PutItemResponse.apply, "Attributes", "ConsumedCapacity", "ItemCollectionMetrics")
   implicit def putItemResponseUnmarshaller: FromEntityUnmarshaller[PutItemResponse] = awsJsonUnmarshaller[PutItemResponse]
 
+  implicit def getItemFormat = jsonFormat(GetItem.apply, "Key", "TableName", "ConsistentRead", "ExpressionAttributeNames", "ProjectionExpression", "ReturnConsumedCapacity")
+  implicit def getItemMarshaller: ToEntityMarshaller[GetItem] = sprayJsonMarshaller[GetItem]
+
+  implicit def getItemResponseFormat = jsonFormat(GetItemResponse.apply, "ConsumedCapacity", "Item")
+  implicit def getItemResponseUnmarshaller: FromEntityUnmarshaller[GetItemResponse] = awsJsonUnmarshaller[GetItemResponse]
+
   implicit def deleteItemFormat = jsonFormat(DeleteItem.apply, "Key", "TableName", "ConditionalExpression", "ExpressionAttributeNames", "ExpressionAttributeValues", "ReturnConsumedCapacity", "ReturnItemCollectionMetrics", "ReturnValues")
   implicit def deleteItemMarshaller: ToEntityMarshaller[DeleteItem] = sprayJsonMarshaller[DeleteItem]
 

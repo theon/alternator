@@ -87,6 +87,19 @@ class DynamoDbClient(host: String,
     singleRequest[PutItemResponse](httpRequest)
   }
 
+  def getItem(tableName: String,
+              key: AttributeValueMap,
+              consistentRead: Boolean = false,
+              returnConsumedCapacity: ReturnConsumedCapacity = ReturnConsumedCapacity.NONE,
+              projectionExpression: Option[String] = None,
+              expressionAttributeNames: Map[String,String] = Map.empty): ReturnType[GetItemResponse] = {
+    val request = GetItem(key, tableName, consistentRead, expressionAttributeNames, projectionExpression, returnConsumedCapacity)
+    val httpRequest = Marshal(request).to[RequestEntity] map { entity =>
+      HttpRequest(method = POST, entity = entity, headers = `X-Amz-Target`("DynamoDB_20120810.GetItem") :: Nil)
+    }
+    singleRequest[GetItemResponse](httpRequest)
+  }
+
   def deleteItem(tableName: String,
                  key: AttributeValueMap,
                  returnConsumedCapacity: ReturnConsumedCapacity = ReturnConsumedCapacity.NONE,
